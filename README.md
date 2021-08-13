@@ -23,7 +23,7 @@ sudo yum -y install MariaDB-shared MariaDB-devel    # this will also install Mar
 
 Clone and build sysbench:
 ```bash
-git clone https://github.com/akopytov/sysbench
+git clone https://github.com/hgxl64/sysbench-1.x-mariadb
 cd sysbench
 ./autogen.sh
 ./configure  --with-mysql-includes=/usr/include/mysql   --with-mysql-libs=/usr/lib64/ --disable-shared --enable-static
