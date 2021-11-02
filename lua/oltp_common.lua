@@ -78,7 +78,10 @@ sysbench.cmdline.options = {
           "PostgreSQL driver. The only currently supported " ..
           "variant is 'redshift'. When enabled, " ..
           "create_secondary is automatically disabled, and " ..
-          "delete_inserts is set to 0"}
+          "delete_inserts is set to 0"},
+   skip_binlog =
+      {"Skip BINLOG (SET SQL_LOG_BIN=0)", false}
+
 }
 
 -- Prepare the dataset. This command supports parallel execution, i.e. will
@@ -86,6 +89,10 @@ sysbench.cmdline.options = {
 function cmd_prepare()
    local drv = sysbench.sql.driver()
    local con = drv:connect()
+
+   if sysbench.opt.skip_binlog then
+      con:query("SET SESSION SQL_LOG_BIN=0")
+   end
 
    for i = sysbench.tid % sysbench.opt.threads + 1, sysbench.opt.tables,
    sysbench.opt.threads do
@@ -101,6 +108,10 @@ end
 function cmd_warmup()
    local drv = sysbench.sql.driver()
    local con = drv:connect()
+
+   if sysbench.opt.skip_binlog then
+      con:query("SET SESSION SQL_LOG_BIN=0")
+   end
 
    assert(drv:name() == "mysql", "warmup is currently MySQL only")
 
@@ -355,6 +366,10 @@ function thread_init()
    drv = sysbench.sql.driver()
    con = drv:connect()
 
+   if sysbench.opt.skip_binlog then
+      con:query("SET SESSION SQL_LOG_BIN=0")
+   end
+
    -- Create global nested tables for prepared statements and their
    -- parameters. We need a statement and a parameter set for each combination
    -- of connection/table/query
@@ -515,6 +530,9 @@ function check_reconnect()
       if transactions % sysbench.opt.reconnect == 0 then
          close_statements()
          con:reconnect()
+         if sysbench.opt.skip_binlog then
+            con:query("SET SESSION SQL_LOG_BIN=0")
+         end
          prepare_statements()
       end
    end
