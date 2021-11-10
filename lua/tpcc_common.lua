@@ -83,6 +83,8 @@ function db_connection_init()
       if sysbench.opt.skip_binlog then
          con:query("SET SESSION SQL_LOG_BIN=0")
       end
+      --- explicitly set the charset to utf8 (PERF-11)
+      con:query("SET NAMES utf8")
    end
 
    if drv:name() == "pgsql" then

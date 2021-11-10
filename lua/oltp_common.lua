@@ -94,6 +94,9 @@ function cmd_prepare()
       con:query("SET SESSION SQL_LOG_BIN=0")
    end
 
+   --- explicitly set the charset to utf8 (PERF-11)
+   con:query("SET NAMES utf8")
+
    for i = sysbench.tid % sysbench.opt.threads + 1, sysbench.opt.tables,
    sysbench.opt.threads do
      create_table(drv, con, i)
@@ -112,6 +115,9 @@ function cmd_warmup()
    if sysbench.opt.skip_binlog then
       con:query("SET SESSION SQL_LOG_BIN=0")
    end
+
+   --- explicitly set the charset to utf8 (PERF-11)
+   con:query("SET NAMES utf8")
 
    assert(drv:name() == "mysql", "warmup is currently MySQL only")
 
@@ -370,6 +376,9 @@ function thread_init()
       con:query("SET SESSION SQL_LOG_BIN=0")
    end
 
+   --- explicitly set the charset to utf8 (PERF-11)
+   con:query("SET NAMES utf8")
+
    -- Create global nested tables for prepared statements and their
    -- parameters. We need a statement and a parameter set for each combination
    -- of connection/table/query
@@ -408,6 +417,9 @@ end
 function cleanup()
    local drv = sysbench.sql.driver()
    local con = drv:connect()
+
+   --- explicitly set the charset to utf8 (PERF-11)
+   con:query("SET NAMES utf8")
 
    for i = 1, sysbench.opt.tables do
       print(string.format("Dropping table 'sbtest%d'...", i))
@@ -533,6 +545,9 @@ function check_reconnect()
          if sysbench.opt.skip_binlog then
             con:query("SET SESSION SQL_LOG_BIN=0")
          end
+         --- explicitly set the charset to utf8 (PERF-11)
+         con:query("SET NAMES utf8")
+
          prepare_statements()
       end
    end
