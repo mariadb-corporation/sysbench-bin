@@ -195,7 +195,7 @@ function create_table(drv, con, table_num)
    then
       if not sysbench.opt.auto_inc then
          id_def = "INTEGER NOT NULL"
-      elseif pgsql_variant == 'redshift' then
+      elseif sysbench.opt.pgsql_variant == 'redshift' then
         id_def = "INTEGER IDENTITY(1,1)"
       else
         id_def = "SERIAL"
@@ -206,6 +206,17 @@ function create_table(drv, con, table_num)
 
    print(string.format("Creating table 'sbtest%d'...", table_num))
 
+   if sysbench.opt.pgsql_variant == 'spanner' then
+   query = string.format([[
+CREATE TABLE sbtest%d(
+  id INT64 NOT NULL,
+  k INT64 NOT NULL,
+  c STRING(120) NOT NULL,
+  pad STRING(60) NOT NULL
+   ) %s (id) %s %s]],
+      table_num, id_index_def, engine_def,
+      sysbench.opt.create_table_options)
+else
    query = string.format([[
 CREATE TABLE sbtest%d(
   id %s,
@@ -216,6 +227,7 @@ CREATE TABLE sbtest%d(
 ) %s %s]],
       table_num, id_def, id_index_def, engine_def,
       sysbench.opt.create_table_options)
+end
 
    con:query(query)
 
