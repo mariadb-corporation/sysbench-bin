@@ -77,7 +77,12 @@ function new_order()
 --  AND c_d_id = :d_id 
 --  AND c_id = :c_id;
 
-  con:query("BEGIN")
+  if (sysbench.opt.splittable == "yes")
+  then
+      con:query("START TRANSACTION READ WRITE")
+  else
+      con:query("BEGIN")
+  end
 
   local c_discount
   local c_last
@@ -253,7 +258,12 @@ function payment()
 --  UPDATE warehouse SET w_ytd = w_ytd + :h_amount
 --  WHERE w_id =:w_id
 
-  con:query("BEGIN")
+  if (sysbench.opt.splittable == "yes")
+  then
+      con:query("START TRANSACTION READ WRITE")
+  else
+      con:query("BEGIN")
+  end
 
   con:query(([[UPDATE warehouse%d
 	          SET w_ytd = w_ytd + %d 
@@ -427,7 +437,13 @@ function orderstatus()
     local c_balance
     local c_first
     local c_middle
-    con:query("BEGIN")
+
+    if (sysbench.opt.splittable == "yes")
+    then
+        con:query("START TRANSACTION READ ONLY")
+    else
+        con:query("BEGIN")
+    end
 
     if byname == 1 then
 --    /*EXEC_SQL SELECT count(c_id)
@@ -552,7 +568,13 @@ function delivery()
     local w_id = sysbench.rand.uniform(1, sysbench.opt.scale)
     local o_carrier_id = sysbench.rand.uniform(1, 10)
 
-    con:query("BEGIN")
+    if (sysbench.opt.splittable == "yes")
+    then
+        con:query("START TRANSACTION READ WRITE")
+    else
+        con:query("BEGIN")
+    end
+
     for  d_id = 1, DIST_PER_WARE do
 
 --	SELECT COALESCE(MIN(no_o_id),0) INTO :no_o_id
@@ -659,7 +681,12 @@ function stocklevel()
     local d_id = sysbench.rand.uniform(1, DIST_PER_WARE)
     local level = sysbench.rand.uniform(10, 20)
 
-    con:query("BEGIN")
+    if (sysbench.opt.splittable == "yes")
+    then
+        con:query("START TRANSACTION READ ONLY")
+    else
+        con:query("BEGIN")
+    end
 
 --	/*EXEC_SQL SELECT d_next_o_id
 --	                FROM district
@@ -752,7 +779,12 @@ function purge()
     local w_id = sysbench.rand.uniform(1, sysbench.opt.scale)
     local d_id = sysbench.rand.uniform(1, DIST_PER_WARE)
 
-    con:query("BEGIN")
+    if (sysbench.opt.splittable == "yes")
+    then
+        con:query("START TRANSACTION READ WRITE")
+    else
+        con:query("BEGIN")
+    end
 
         local m_o_id
         
@@ -782,8 +814,15 @@ function purge()
                             :format(table_num, w_id, d_id, del_o_id))
         con:query(([[DELETE FROM orders%d where o_w_id=%d AND o_d_id=%d and o_id=%d]])
                             :format(table_num, w_id, d_id, del_o_id))
-        con:query(([[DELETE FROM history%d where h_w_id=%d AND h_d_id=%d LIMIT 10]])
-                            :format(table_num, w_id, d_id ))
+
+        if drv:name() == "mysql" then   --Use MySQL specific SQL which allows LIMIT clause for DELETE statement
+          con:query(([[DELETE FROM history%d where h_w_id=%d AND h_d_id=%d LIMIT 10]])
+                              :format(table_num, w_id, d_id ))
+        elseif drv:name() == "pgsql" then --Use ctid to delete
+          con:query(([[DELETE FROM history%d where ctid IN (SELECT ctid FROM history%d WHERE h_w_id=%d AND h_d_id=%d LIMIT 10)]])
+                              :format(table_num,table_num, w_id, d_id ))
+        end
+
 
 	end
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env sysbench
--- Copyright (C) 2006-2017 Alexey Kopytov <akopytov@gmail.com>, Axel Schwenke <axel@mariadb.com>
+-- Copyright (C) 2006-2017 Alexey Kopytov <akopytov@gmail.com>
 
 -- This program is free software; you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by

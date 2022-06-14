@@ -91,11 +91,17 @@ function cmd_prepare()
    local con = drv:connect()
 
    if sysbench.opt.skip_binlog then
-      con:query("SET SESSION SQL_LOG_BIN=0")
+      if drv:name() == "mysql"
+      then
+         con:query("SET SESSION SQL_LOG_BIN=0")
+      end
    end
 
    --- explicitly set the charset to utf8 (PERF-11)
-   con:query("SET NAMES utf8")
+   if drv:name() == "mysql"
+   then
+      con:query("SET NAMES utf8")
+   end
 
    for i = sysbench.tid % sysbench.opt.threads + 1, sysbench.opt.tables,
    sysbench.opt.threads do
@@ -113,11 +119,17 @@ function cmd_warmup()
    local con = drv:connect()
 
    if sysbench.opt.skip_binlog then
-      con:query("SET SESSION SQL_LOG_BIN=0")
+      if drv:name() == "mysql"
+      then
+         con:query("SET SESSION SQL_LOG_BIN=0")
+      end
    end
 
    --- explicitly set the charset to utf8 (PERF-11)
-   con:query("SET NAMES utf8")
+   if drv:name() == "mysql"
+   then
+      con:query("SET NAMES utf8")
+   end
 
    assert(drv:name() == "mysql", "warmup is currently MySQL only")
 
@@ -195,7 +207,7 @@ function create_table(drv, con, table_num)
    then
       if not sysbench.opt.auto_inc then
          id_def = "INTEGER NOT NULL"
-      elseif sysbench.opt.pgsql_variant == 'redshift' then
+      elseif pgsql_variant == 'redshift' then
         id_def = "INTEGER IDENTITY(1,1)"
       else
         id_def = "SERIAL"
@@ -206,17 +218,6 @@ function create_table(drv, con, table_num)
 
    print(string.format("Creating table 'sbtest%d'...", table_num))
 
-   if sysbench.opt.pgsql_variant == 'spanner' then
-   query = string.format([[
-CREATE TABLE sbtest%d(
-  id INT64 NOT NULL,
-  k INT64 NOT NULL,
-  c STRING(120) NOT NULL,
-  pad STRING(60) NOT NULL
-   ) %s (id) %s %s]],
-      table_num, id_index_def, engine_def,
-      sysbench.opt.create_table_options)
-else
    query = string.format([[
 CREATE TABLE sbtest%d(
   id %s,
@@ -227,7 +228,6 @@ CREATE TABLE sbtest%d(
 ) %s %s]],
       table_num, id_def, id_index_def, engine_def,
       sysbench.opt.create_table_options)
-end
 
    con:query(query)
 
@@ -385,11 +385,17 @@ function thread_init()
    con = drv:connect()
 
    if sysbench.opt.skip_binlog then
-      con:query("SET SESSION SQL_LOG_BIN=0")
+      if drv:name() == "mysql"
+      then
+         con:query("SET SESSION SQL_LOG_BIN=0")
+      end
    end
 
    --- explicitly set the charset to utf8 (PERF-11)
-   con:query("SET NAMES utf8")
+   if drv:name() == "mysql"
+   then
+      con:query("SET NAMES utf8")
+   end
 
    -- Create global nested tables for prepared statements and their
    -- parameters. We need a statement and a parameter set for each combination
@@ -430,8 +436,18 @@ function cleanup()
    local drv = sysbench.sql.driver()
    local con = drv:connect()
 
+   if sysbench.opt.skip_binlog then
+      if drv:name() == "mysql"
+      then
+         con:query("SET SESSION SQL_LOG_BIN=0")
+      end
+   end
+
    --- explicitly set the charset to utf8 (PERF-11)
-   con:query("SET NAMES utf8")
+   if drv:name() == "mysql"
+   then
+      con:query("SET NAMES utf8")
+   end
 
    for i = 1, sysbench.opt.tables do
       print(string.format("Dropping table 'sbtest%d'...", i))
@@ -554,11 +570,19 @@ function check_reconnect()
       if transactions % sysbench.opt.reconnect == 0 then
          close_statements()
          con:reconnect()
+
          if sysbench.opt.skip_binlog then
-            con:query("SET SESSION SQL_LOG_BIN=0")
+            if drv:name() == "mysql"
+            then
+               con:query("SET SESSION SQL_LOG_BIN=0")
+            end
          end
+
          --- explicitly set the charset to utf8 (PERF-11)
-         con:query("SET NAMES utf8")
+         if drv:name() == "mysql"
+         then
+            con:query("SET NAMES utf8")
+         end
 
          prepare_statements()
       end
