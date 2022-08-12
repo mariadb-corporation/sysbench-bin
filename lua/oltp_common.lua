@@ -80,7 +80,11 @@ sysbench.cmdline.options = {
           "create_secondary is automatically disabled, and " ..
           "delete_inserts is set to 0"},
    skip_binlog =
-      {"Skip BINLOG (SET SQL_LOG_BIN=0)", false}
+      {"Skip BINLOG (SET SQL_LOG_BIN=0)", false},
+   bulk_load =
+      {"use extensions for bulk loading, like mysqldump does", false},
+   rand_size =
+      {"vary the size of the `c` column this much", 0}
 
 }
 
@@ -176,7 +180,15 @@ local pad_value_template = "###########-###########-###########-" ..
    "###########-###########"
 
 function get_c_value()
-   return sysbench.rand.string(c_value_template)
+   local c_value = sysbench.rand.string(c_value_template)
+   local c_len = string.len(c_value)
+
+   if sysbench.opt.rand_size > 0 then
+      c_len = c_len - sysbench.rand.uniform(0, sysbench.opt.rand_size)
+      c_value = string.sub(c_value, 1, c_len)
+   end
+
+   return c_value
 end
 
 function get_pad_value()
@@ -232,8 +244,14 @@ CREATE TABLE sbtest%d(
    con:query(query)
 
    if (sysbench.opt.table_size > 0) then
-      print(string.format("Inserting %d records into 'sbtest%d'",
-                          sysbench.opt.table_size, table_num))
+      if drv:name() == "mysql" and sysbench.opt.bulk_load then
+         con:query("SET autocommit=0, unique_checks=0, foreign_key_checks=0")
+         print(string.format("Inserting %d records into 'sbtest%d' in bulk insert mode",
+                             sysbench.opt.table_size, table_num))
+      else
+         print(string.format("Inserting %d records into 'sbtest%d'",
+                             sysbench.opt.table_size, table_num))
+      end
    end
 
    if sysbench.opt.auto_inc then
@@ -267,6 +285,11 @@ CREATE TABLE sbtest%d(
    end
 
    con:bulk_insert_done()
+
+   if drv:name() == "mysql" and sysbench.opt.bulk_load
+   then
+      con:query("SET autocommit=1, unique_checks=1, foreign_key_checks=1")
+   end
 
    if sysbench.opt.create_secondary then
       print(string.format("Creating a secondary index on 'sbtest%d'...",
