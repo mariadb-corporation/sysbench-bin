@@ -13,6 +13,8 @@ Install operating system support packages:
 ```bash
 yum -y install make automake libtool pkgconfig libaio-devel
 yum -y install openssl-devel zlib-devel
+# postgres support
+yum -y install postgresql-devel
 ```
 
 Setup MariaDB repo (See Amazon Linux below):
@@ -42,7 +44,7 @@ mkdir tools
 git clone https://github.com/hgxl64/sysbench-1.x-mariadb
 cd sysbench-1.x-mariadb
 ./autogen.sh
-./configure  --with-mysql-includes=/usr/include/mysql   --with-mysql-libs=/usr/lib64/ --disable-shared --enable-static
+./configure --with-mysql-includes=/usr/include/mysql --with-mysql-libs=/usr/lib64/ --with-pgsql --disable-shared --enable-static
 
 make 
 sudo make install
