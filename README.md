@@ -13,13 +13,16 @@ Install operating system support packages:
 ```bash
 yum -y install make automake libtool pkgconfig libaio-devel
 yum -y install openssl-devel zlib-devel
+sudo yum -y install postgresql-devel # if you need plan to test posgres database
+./autogen.sh
+./configure --with-pgsql --with-postgresql --with-mysql
 ```
 
 Setup MariaDB repo (See Amazon Linux below):
 
 ```bash
 curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | sudo bash
-sudo yum -y install MariaDB-shared MariaDB-devel    # this will also install MariaDB-client MariaDB-common 
+sudo yum -y install MariaDB-shared MariaDB-devel    # this will also install MariaDB-client MariaDB-common
 ```
 
 For Amazon Linux setup the repo using old way:
@@ -38,13 +41,13 @@ Clone and build sysbench:
 
 ```bash
 sudo yum install git
-mkdir tools 
+mkdir tools
 git clone https://github.com/hgxl64/sysbench-1.x-mariadb
 cd sysbench-1.x-mariadb
 ./autogen.sh
-./configure  --with-mysql-includes=/usr/include/mysql   --with-mysql-libs=/usr/lib64/ --disable-shared --enable-static
+./configure  --with-pgsql --with-postgresql --with-mysql-includes=/usr/include/mysql   --with-mysql-libs=/usr/lib64/ --disable-shared --enable-static
 
-make 
+make
 sudo make install
 /usr/local/bin/sysbench --version
 ```
