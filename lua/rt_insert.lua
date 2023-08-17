@@ -16,26 +16,49 @@
 -- Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
 -- ----------------------------------------------------------------------
--- Update-Index OLTP benchmark
+-- Insert-Only OLTP benchmark
 -- ----------------------------------------------------------------------
 
 require("oltp_common")
 
 function prepare_statements()
-   prepare_index_updates()
    if not sysbench.opt.skip_trx then
       prepare_begin()
       prepare_commit()
+   else
+      sysbench.opt.batch_size = 1
    end
 end
 
 function event()
+   local table_name = "sbtest" .. sysbench.rand.uniform(1, sysbench.opt.tables)
+
    if not sysbench.opt.skip_trx then
       begin()
    end
- 
+
    for i = 1, sysbench.opt.batch_size do
-      execute_index_updates()
+
+      local k_val = sysbench.rand.default(1, 2147483647)
+      local c_val = get_c_value()
+      local pad_val = get_pad_value()
+   
+      if (drv:name() == "pgsql" and sysbench.opt.auto_inc) then
+         con:query(string.format("INSERT INTO %s (k, c, pad) VALUES " ..
+                                    "(%d, '%s', '%s')",
+                                 table_name, k_val, c_val, pad_val))
+      else
+         if (sysbench.opt.auto_inc) then
+            id = 0
+         else
+            -- Convert a uint32_t value to SQL INT
+            id = sysbench.rand.unique() - 2147483648
+         end
+   
+         con:query(string.format("INSERT INTO %s (id, k, c, pad) VALUES " ..
+                                    "(%d, %d, '%s', '%s')",
+                                 table_name, id, k_val, c_val, pad_val))
+      end
    end
 
    if not sysbench.opt.skip_trx then

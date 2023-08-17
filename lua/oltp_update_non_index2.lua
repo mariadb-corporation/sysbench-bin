@@ -34,7 +34,7 @@ function event()
       begin()
    end
 
-   for i = 1, sysbench.opt.point_selects do
+   for i = 1, sysbench.opt.batch_size do
       execute_non_index_updates()
    end
 

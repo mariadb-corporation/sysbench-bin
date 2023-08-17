@@ -83,6 +83,8 @@ sysbench.cmdline.options = {
       {"Skip BINLOG (SET SQL_LOG_BIN=0)", false},
    bulk_load =
       {"use extensions for bulk loading, like mysqldump does", false},
+   batch_size =
+      {"number of statements in a transaction", 10};
    rand_size =
       {"vary the size of the `c` column this much", 0}
 
